@@ -1,0 +1,25 @@
+on:
+  workflow_dispatch:  # Trigger the workflow manually
+
+jobs:
+  get_contributors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fetch contributors
+        run: |
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/OWASP/BLT/contributors > contributors.json
+
+      - name: Send contributors to Slack
+        uses: rtCamp/action-slack-notify@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,workflow,job
+          custom_payload: |
+            {
+              "contributors": $(jq -r '.[].login' contributors.json)
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  # Replace with your Slack webhook URL
