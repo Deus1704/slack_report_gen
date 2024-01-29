@@ -12,6 +12,12 @@ jobs:
         run: |
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/OWASP/BLT/contributors > contributors.json
 
+      - name: Extract contributor names
+        run: |
+          contributors=$(jq -r '.[].login' contributors.json)
+          echo "::set-output name=contributors::$contributors"
+        id: extract_contributors
+
       - name: Send contributors to Slack
         uses: rtCamp/action-slack-notify@v3
         with:
@@ -19,7 +25,7 @@ jobs:
           fields: repo,workflow,job
           custom_payload: |
             {
-              "contributors": $(jq -r '.[].login' contributors.json)
+              "contributors": ${{ steps.extract_contributors.outputs.contributors }}
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  # Replace with your Slack webhook URL
